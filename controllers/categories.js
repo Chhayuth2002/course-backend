@@ -1,6 +1,6 @@
 const Category = require('../models/Category')
 
-const getAllCategory = (req, res) => {
+const list = (req, res) => {
   try {
     Category.query().then(result => res.json(result))
   } catch (error) {
@@ -8,7 +8,7 @@ const getAllCategory = (req, res) => {
   }
 }
 
-const getOneCategory = (req, res) => {
+const show = (req, res) => {
   try {
     const { id } = req.params
 
@@ -20,7 +20,7 @@ const getOneCategory = (req, res) => {
   }
 }
 
-const createCategory = (req, res) => {
+const create = (req, res) => {
   try {
     const { name, code } = req.body
 
@@ -35,7 +35,7 @@ const createCategory = (req, res) => {
   }
 }
 
-const updateCategory = (req, res) => {
+const update = (req, res) => {
   try {
     const { id } = req.params
     const { name, code } = req.body
@@ -51,7 +51,7 @@ const updateCategory = (req, res) => {
   }
 }
 
-const deleteCategory = (req, res) => {
+const destroy = (req, res) => {
   try {
     const { id } = req.params
 
@@ -64,9 +64,9 @@ const deleteCategory = (req, res) => {
 }
 
 module.exports = {
-  getAllCategory,
-  getOneCategory,
-  createCategory,
-  updateCategory,
-  deleteCategory
+  list,
+  show,
+  create,
+  update,
+  destroy
 }

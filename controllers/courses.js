@@ -4,7 +4,7 @@ const Lesson = require('../models/Lesson')
 const Tag = require('../models/Tag')
 const CourseTag = require('../models/CourseTag')
 
-const getAllCourse = (req, res) => {
+const list = (req, res) => {
   try {
     Course.query()
       .withGraphJoined('[chapters.[lessons], tags]')
@@ -14,19 +14,23 @@ const getAllCourse = (req, res) => {
   }
 }
 
-const getOneCourse = async (req, res) => {
+const show = async (req, res) => {
   try {
     const { id } = req.params
 
-    const course = await Course.query().findById(id)
+    const course = await Course.query()
+      .findById(id)
+      .withGraphJoined('[chapters.[lessons], tags]')
 
     if (!course) res.json({ msg: 'Course not found' })
+
+    res.json(course)
   } catch (error) {
     res.json({ error: error.message })
   }
 }
 
-const createCourse = async (req, res) => {
+const create = async (req, res) => {
   try {
     const data = req.body
 
@@ -88,7 +92,7 @@ const createCourse = async (req, res) => {
   }
 }
 
-const updateCourse = async (req, res) => {
+const update = async (req, res) => {
   try {
     const { id } = req.params
     const data = req.body
@@ -220,7 +224,7 @@ const updateCourse = async (req, res) => {
   }
 }
 
-const deleteCourse = (req, res) => {
+const destroy = (req, res) => {
   try {
     const { id } = req.params
 
@@ -250,9 +254,9 @@ const convertToDeleteValue = value => {
 }
 
 module.exports = {
-  getAllCourse,
-  getOneCourse,
-  createCourse,
-  updateCourse,
-  deleteCourse
+  list,
+  show,
+  create,
+  update,
+  destroy
 }

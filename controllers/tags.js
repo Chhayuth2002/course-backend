@@ -1,6 +1,6 @@
 const Tag = require("../models/Tag")
 
-const getAllTags = async (req, res) => {
+const list = async (req, res) => {
   try {
     await Tag.query().then(result => res.json(result))
   } catch (error) {
@@ -9,4 +9,4 @@ const getAllTags = async (req, res) => {
 
 }
 
-module.exports = getAllTags
+module.exports = list

@@ -7,8 +7,7 @@ const {
   create,
   update,
   destroy
-} = require("../controllers/courses")
-
+} = require("../controllers/categories")
 
 router.route("/").get(list).post(create)
 router.route("/:id").get(show).put(update).delete(destroy)

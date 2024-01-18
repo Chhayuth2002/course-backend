@@ -1,10 +1,8 @@
 const express = require("express")
 const router = express.Router()
 
-const {
-  getAllTags
-} = require("../controllers/tags")
+const list = require("../controllers/tags")
 
-router.route("/").get(getAllTags)
+router.route("/").get(list)
 
 module.exports = router

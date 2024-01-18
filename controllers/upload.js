@@ -1,7 +1,7 @@
 const Image = require("../models/Image")
 
 
-const upload =async (req, res) => {
+const uploadFile =async (req, res) => {
   const basePath  = `${req.protocol}://${req.get("host")}/public/uploads/`
   try {
     
@@ -19,4 +19,4 @@ const upload =async (req, res) => {
   }
 }
 
-module.exports = upload
+module.exports = uploadFile
