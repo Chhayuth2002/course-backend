@@ -4,8 +4,6 @@
  * @type { Object.<string, import("knex").Knex.Config> }
  */
 
-const { knexSnakeCaseMappers } = require("objection")
-// require("dotenv/config")
 module.exports = {
    production: { 
     client: 'pg', 
