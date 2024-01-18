@@ -3,7 +3,7 @@ require("dotenv/config")
 const cors = require("cors")
 const path = require('path')
 const routes = require("./routers")
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 5000
 
 const app = express()
 // MIDDLEWARE
