@@ -1,8 +1,8 @@
 const knex = require("knex")
 const { Model } = require('objection')
 const config = require('../knexfile.js')
-
-const db = knex(config.production)
+const NODE_ENV = process.env.NODE_ENV || "development"
+const db = knex(config[NODE_ENV])
 
 Model.knex(db)
 
