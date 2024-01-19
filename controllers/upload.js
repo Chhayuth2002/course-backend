@@ -3,8 +3,7 @@ const Image = require("../models/Image")
 
 const uploadFile =async (req, res) => {
   const basePath  = `${req.protocol}://${req.get("host")}/public/uploads/`
-  try {
-    
+  try { 
     const fileName = req.file.filename
     
     const image = await Image.query().insert({

@@ -6,6 +6,7 @@ const routes = require("./routers")
 const port = process.env.PORT || 5000
 
 const app = express()
+
 // MIDDLEWARE
 app.use(express.json())
 app.use(cors())

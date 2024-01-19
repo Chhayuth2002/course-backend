@@ -31,19 +31,22 @@ const show = async (req, res) => {
 }
 
 const create = async (req, res) => {
-  try {
-    const data = req.body
+  const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`
+  const data = req.body
+  const file = req.files
 
+  console.log(file)
+  try {
     const course = await Course.query().insert({
       name: data.name,
       summary: data.summary,
       category_id: data.category_id,
-      image_url: data.image_url
+      image_url: `${basePath}${file[0].filename}` || null
     })
 
     // Add tags
     const tagsParam = data.tags
-      .filter(tag => tag.__isNew__)
+      .filter(tag => convert(tag.__isNew__))
       .map(tag => ({ name: tag.label }))
 
     if (tagsParam.length > 0) {
@@ -58,7 +61,7 @@ const create = async (req, res) => {
     }
 
     for (const tagData of data.tags) {
-      if (!tagData.__isNew__) {
+      if (!convert(tagData.__isNew__)) {
         await CourseTag.query().insert({
           course_id: course.id,
           tag_id: tagData.value
@@ -66,17 +69,31 @@ const create = async (req, res) => {
       }
     }
 
-    for (const chapterData of data.chapters) {
+    let fileIndex = 1
+
+    for (let i = 0; i < data.chapters.length; i++) {
       const chapter = await Chapter.query().insert({
-        name: chapterData.name,
-        summary: chapterData.summary,
+        name: data.chapters[i].name,
+        summary: data.chapters[i].summary,
         course_id: course.id
       })
-      for (const lessonData of chapterData.lessons) {
+
+      for (let j = 0; j < data.chapters[i].lessons.length; j++) {
+        const lessonFileIndex = fileIndex++
+        let fileName
+
+        if (file) {
+          const expectedFieldName = `chapters[${i}][lessons][${j}][image_url]`
+          console.log(expectedFieldName)
+          if (file[lessonFileIndex]?.fieldname === expectedFieldName) {
+            fileName = `${basePath}${file[lessonFileIndex].filename}`
+          }
+        }
+
         await Lesson.query().insert({
-          name: lessonData.name,
-          content: lessonData.content,
-          image_url: lessonData.image_url,
+          name: data.chapters[i].lessons[j].name,
+          content: data.chapters[i].lessons[j].content,
+          image_url: fileName,
           chapter_id: chapter.id
         })
       }
@@ -89,25 +106,29 @@ const create = async (req, res) => {
     res.json(result)
   } catch (error) {
     res.json({ error: error.message })
+    console.log(error)
   }
 }
 
 const update = async (req, res) => {
+  const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`
+  const { id } = req.params
+  const data = req.body
+  const file = req.files
   try {
-    const { id } = req.params
-    const data = req.body
 
     const course = await Course.query().patchAndFetchById(id, {
       name: data.name,
       summary: data.summary,
-      image_url: data.image_url
+      image_url:
+        file[0]?.fieldname === 'image_url' ?`${basePath}${ file[0].filename}` : data.image_url
     })
 
     if (!course) return res.json({ msg: 'course not found' })
 
     // Remove tags
     const removeTagIds = data.tags
-      .filter(tag => tag._delete && tag.id)
+      .filter(tag => convert(tag._delete) && tag.id)
       .map(tag => tag.id)
 
     if (removeTagIds.length > 0) {
@@ -117,38 +138,42 @@ const update = async (req, res) => {
         .delete()
     }
 
+    // Update tag
     const updateTag = data.tags.filter(
-      tag => tag.id && !tag._delete && !tag.__isNew__
+      tag => tag.id && !convert(tag._delete) && !convert(tag.__isNew__)
     )
 
-    console.log(updateTag)
-
-    for (const update of updateTag) {
-      await CourseTag.query().insert({
-        course_id: course.id,
-        tag_id: update.id
-      })
+    if (updateTag.length > 0) {
+      for (const update of updateTag) {
+        await CourseTag.query().insert({
+          course_id: course.id,
+          tag_id: update.id
+        })
+      }
     }
 
-    // Add tags
-    const tagsParam = data.tags.filter(tag => !tag.id).name
+    // Add new tags
+    const tagsParam = data.tags
+      .filter(tag => !tag.id)
+      .map(tag => ({ name: tag.name }))
 
-    if (tagsParam) {
+    if (tagsParam.length > 0) {
       const tags = await Tag.query().insert(tagsParam)
 
-      const courseTagParam = tags.map(tag => ({
-        tag_id: tag.id,
-        course_id: course.id
-      }))
-      await CourseTag.query().insert(courseTagParam)
+      tags.forEach(async tag => {
+        await CourseTag.query().insert({
+          tag_id: tag.id,
+          course_id: course.id
+        })
+      })
     }
 
     // Remove chapters
     const removeChapterIds = data.chapters
-      .filter(chapter => chapter._delete && chapter.id)
+      .filter(chapter => convert(chapter._delete) && chapter.id)
       .map(chapter => chapter.id)
 
-    if (removeChapterIds) {
+    if (removeChapterIds.length > 0) {
       await Chapter.query()
         .where('course_id', course.id)
         .whereIn('id', removeChapterIds)
@@ -157,9 +182,11 @@ const update = async (req, res) => {
       await Lesson.query().whereIn('chapter_id', removeChapterIds).delete()
     }
 
-    for (const chapterData of data.chapters) {
+    let fileIndex = file[0]?.fieldname === 'image_url' ? 1 : 0
+
+    data.chapters.forEach(async (chapterData, i) => {
       let chapter
-      if (chapterData.id && !chapterData._delete) {
+      if (chapterData.id && !convert(chapterData._delete)) {
         // Update existing chapter
         chapter = await Chapter.query().patchAndFetchById(chapterData.id, {
           name: chapterData.name,
@@ -168,7 +195,7 @@ const update = async (req, res) => {
         })
       }
 
-      if (chapterData.__isNew__) {
+      if (!chapterData.id) {
         // Add new chapter
         chapter = await Chapter.query().insert({
           name: chapterData.name,
@@ -180,7 +207,7 @@ const update = async (req, res) => {
       if (chapter) {
         // Remove lesson
         const removeLessonIds = chapterData.lessons
-          .filter(lesson => lesson.id && lesson._delete)
+          .filter(lesson => lesson.id && convert(lesson._delete))
           .map(lesson => lesson.id)
 
         if (removeLessonIds) {
@@ -190,29 +217,44 @@ const update = async (req, res) => {
             .delete()
         }
 
-        for (const lessonData of chapterData.lessons) {
-          if (lessonData.id && !lessonData._delete && !lessonData.__isNew__) {
+        chapterData.lessons.forEach(async (lessonData, j) => {
+          const lessonFileIndex = fileIndex++
+          let fileName
+
+          if (file) {
+            const expectedFieldName = `chapters[${i}][lessons][${j}][image_url]`
+            console.log(expectedFieldName)
+            if (file[lessonFileIndex]?.fieldname === expectedFieldName) {
+              fileName = `${basePath}${file[lessonFileIndex].filename}`
+            }
+          }
+
+          if (lessonData?.image_url?.startsWith('http')) {
+            fileName = lessonData.image_url
+          }
+
+          if (lessonData.id && !convert(lessonData._delete)) {
             // Update existing lesson
             await Lesson.query().findById(lessonData.id).patch({
               name: lessonData.name,
               content: lessonData.content,
-              image_url: lessonData.image_url,
+              image_url: fileName,
               chapter_id: chapter.id
             })
           }
 
-          if (lessonData.__isNew__) {
+          if (!lessonData.id) {
             // Add new lesson
             await Lesson.query().insert({
               name: lessonData.name,
               content: lessonData.content,
-              image_url: lessonData.image_url,
+              image_url: fileName,
               chapter_id: chapter.id
             })
           }
-        }
+        })
       }
-    }
+    })
 
     const result = await Course.query()
       .findById(id)
@@ -221,6 +263,7 @@ const update = async (req, res) => {
     res.json(result)
   } catch (error) {
     res.json({ error: error.message })
+    console.log(error)
   }
 }
 
@@ -236,7 +279,7 @@ const destroy = (req, res) => {
   }
 }
 
-const convertToDeleteValue = value => {
+const convert = value => {
   if (typeof value === 'boolean') {
     return value
   }

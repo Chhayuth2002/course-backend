@@ -1,5 +1,6 @@
 const express = require("express")
 const router = express.Router()
+const upload = require("../multer.js")
 
 const {
   list,
@@ -10,7 +11,7 @@ const {
 } = require("../controllers/courses")
 
 
-router.route("/").get(list).post(create)
-router.route("/:id").get(show).put(update).delete(destroy)
+router.route("/").get(list).post(upload.any() ,create)
+router.route("/:id").get(show).put(upload.any() ,update).delete(destroy)
 
 module.exports = router
