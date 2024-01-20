@@ -41,7 +41,7 @@ const create = async (req, res) => {
       name: data.name,
       summary: data.summary,
       category_id: data.category_id,
-      image_url: `${basePath}${file[0].filename}` || null
+      image_url: file[0].fieldname ==="image_url" ?`${basePath}${file[0].filename}` : null
     })
 
     // Add tags
@@ -69,7 +69,7 @@ const create = async (req, res) => {
       }
     }
 
-    let fileIndex = 1
+    let fileIndex = file[0].fieldname === "image_url" ? 1 : 0
 
     for (let i = 0; i < data.chapters.length; i++) {
       const chapter = await Chapter.query().insert({
