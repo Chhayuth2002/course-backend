@@ -41,7 +41,10 @@ const create = async (req, res) => {
       name: data.name,
       summary: data.summary,
       category_id: data.category_id,
-      image_url: file[0].fieldname ==="image_url" ?`${basePath}${file[0].filename}` : null
+      image_url:
+        file[0]?.fieldname === 'image_url'
+          ? `${basePath}${file[0].filename}`
+          : null
     })
 
     // Add tags
@@ -69,7 +72,7 @@ const create = async (req, res) => {
       }
     }
 
-    let fileIndex = file[0].fieldname === "image_url" ? 1 : 0
+    let fileIndex = file[0]?.fieldname === 'image_url' ? 1 : 0
 
     for (let i = 0; i < data.chapters.length; i++) {
       const chapter = await Chapter.query().insert({
@@ -116,12 +119,13 @@ const update = async (req, res) => {
   const data = req.body
   const file = req.files
   try {
-
     const course = await Course.query().patchAndFetchById(id, {
       name: data.name,
       summary: data.summary,
       image_url:
-        file[0]?.fieldname === 'image_url' ?`${basePath}${ file[0].filename}` : data.image_url
+        file[0]?.fieldname === 'image_url'
+          ? `${basePath}${file[0].filename}`
+          : data.image_url
     })
 
     if (!course) return res.json({ msg: 'course not found' })
