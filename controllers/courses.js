@@ -37,7 +37,7 @@ const create = async (req, res) => {
 
   try {
     let fileName
-    if (file) {
+    if (file.filename) {
       fileName = `${basePath}${file[0].filename}`
     }
 
