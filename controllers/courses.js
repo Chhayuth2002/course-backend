@@ -35,16 +35,17 @@ const create = async (req, res) => {
   const data = req.body
   const file = req.files
 
-  console.log(file)
   try {
+    let fileName
+    if (file) {
+      fileName = `${basePath}${file[0].filename}`
+    }
+
     const course = await Course.query().insert({
       name: data.name,
       summary: data.summary,
       category_id: data.category_id,
-      image_url:
-        file[0]?.fieldname === 'image_url'
-          ? `${basePath}${file[0].filename}`
-          : null
+      image_url: fileName || null
     })
 
     // Add tags
